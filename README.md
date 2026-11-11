@@ -1,39 +1,14 @@
-# DocChat: a pirate that reads your files
+docchat is a chatbot you run in the terminal. It answers questions about the files in the folder where you start it, and it talks like a pirate.
 
-DocChat is a command-line chatbot that answers questions about the files in whatever folder you start it in. It can list, read, and search files and do arithmetic, either automatically when the model asks for a tool or directly through slash commands like `/ls`.
-
-## Install
+to install it, run this command, then make a file called .env that contains the line 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.
 
 ```
 python -m pip install -e . -r requirements.txt
 ```
 
-Put your Groq API key in a `.env` file (`GROQ_API_KEY=...`) in the folder where you run `chat`, or export it in your shell. Slash commands work without a key.
+type chat to start. Ask a question, and the bot will look at your files to answer it. You can also run commands yourself without the API key: /ls lists files, /cat shows a file, /grep finds lines that contain a word, /calculate does math, /compact shortens the conversation, and /image adds a picture. For safety, the bot can only open files inside the folder where you started it.
 
-## Usage
-
-```
-chat                     # interactive session
-chat "what is in here?"  # send one message, print the reply, and exit
-chat --debug             # print every tool the model calls
-```
-
-Inside a session:
-
-| Command | What it does |
-| --- | --- |
-| `/ls [path]` | list the files in a folder |
-| `/cat path` | print a text file |
-| `/grep regex path` | print matching lines from files matching a glob |
-| `/calculate expression` | evaluate arithmetic |
-| `/compact` | replace the history with a five-line summary |
-| `/image path` | attach a PNG for a vision model |
-
-Every file tool refuses absolute paths and paths containing `..`, so the model can only see files inside the folder where `chat` was started.
-
-## Examples
-
-### Personal website
+here is the bot looking at my personal website:
 
 ```
 cd test_projects/lab-homepage
@@ -44,9 +19,9 @@ chat> which pages does this website have and how are they styled?
 REPLY_HOMEPAGE
 ```
 
-The site is three linked pages (home, about, and destinations) that all share one `style.css`, which uses `:hover` colors on the navigation links.
+I learned that the site has three pages (home, about, and destinations) that all use the same style file.
 
-### Markdown compiler
+here is the bot looking at my Markdown compiler:
 
 ```
 cd test_projects/markdown-compiler
@@ -57,9 +32,9 @@ chat> how are headings converted?
 REPLY_MARKDOWN
 ```
 
-Headings are handled one line at a time in `markdown_compiler/util/line_functions.py`, where `compile_headers` counts the leading `#` characters (one to six, followed by a space) to pick the `<h1>`–`<h6>` tag, while paragraphs and code blocks need the whole document in `compile_lines`.
+I learned that headings are converted one line at a time, and the number of # signs decides whether it becomes h1, h2, and so on.
 
-### eBay scraper
+here is the bot looking at my eBay scraper:
 
 ```
 cd test_projects/ebay-scraper
@@ -70,15 +45,4 @@ chat> what fields does ebay-dl.py save for each listing?
 REPLY_EBAY
 ```
 
-Each listing is saved with six fields (name, price, status, shipping, free returns, and items sold), and prices and shipping are stored as whole cents instead of dollar strings.
-
-## Development
-
-```
-python -m pytest --doctest-modules tools chat.py
-python -m coverage run --source=tools -m pytest --doctest-modules tools
-python -m coverage report -m
-python -m flake8 chat.py tools --ignore=E501
-```
-
-After cloning, run `git submodule update --init --recursive` to download the example projects in `test_projects/`.
+I learned that each listing is saved with six fields: name, price, status, shipping, free returns, and items sold.
