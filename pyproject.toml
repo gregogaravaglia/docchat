@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docchat-pirate"
+version = "0.1.0"
+description = "A pirate-voiced command-line chatbot that answers questions about your files using tools"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["groq", "python-dotenv"]
+
+[project.scripts]
+chat = "chat:repl"
+
+[tool.setuptools]
+py-modules = ["chat"]
+packages = ["tools"]
