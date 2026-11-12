@@ -20,6 +20,7 @@ SYSTEM_PROMPT = (
     'You are a helpful assistant that answers questions about the files in '
     'the current folder. Use the ls, cat, and grep tools to look at files '
     'before answering, and the calculate tool for arithmetic. '
+    'Answer in two to four plain sentences without tables or headings. '
     'You always speak like a pirate.'
 )
 
@@ -151,8 +152,10 @@ def has_image(messages):
     return any(isinstance(m.get('content'), list) for m in messages)
 
 
-def llm(messages, temperature=1, tools=None):
+def llm(messages, temperature=1, tools=None, retries=5):
     """Send messages (and optional tool descriptions) to the model and return its reply message.
+
+    A request the service rejects because the model wrote malformed output is retried.
 
     >>> from unittest.mock import patch
     >>> from types import SimpleNamespace as NS
@@ -164,6 +167,17 @@ def llm(messages, temperature=1, tools=None):
     >>> kwargs = Groq.return_value.chat.completions.create.call_args.kwargs
     >>> kwargs['model'], kwargs['temperature'], 'tools' in kwargs
     ('openai/gpt-oss-20b', 0, False)
+    >>> bad = RuntimeError("Error code: 400 - {'code': 'tool_use_failed'}")
+    >>> with patch('chat.Groq') as Groq:
+    ...     Groq.return_value.chat.completions.create.side_effect = [bad, response]
+    ...     print(llm([{'role': 'user', 'content': 'Hi'}]).content)
+    Ahoy!
+    >>> with patch('chat.Groq') as Groq:
+    ...     Groq.return_value.chat.completions.create.side_effect = RuntimeError('quota exhausted')
+    ...     llm([{'role': 'user', 'content': 'Hi'}])
+    Traceback (most recent call last):
+    ...
+    RuntimeError: quota exhausted
     """
     kwargs = {
         'messages': list(messages),
@@ -173,8 +187,14 @@ def llm(messages, temperature=1, tools=None):
     }
     if tools:
         kwargs['tools'] = tools
-    completion = get_client().chat.completions.create(**kwargs)
-    return completion.choices[0].message
+    for attempt in range(retries + 1):
+        try:
+            completion = get_client().chat.completions.create(**kwargs)
+            return completion.choices[0].message
+        except Exception as error:
+            flaky = 'tool_use_failed' in str(error) or 'output_parse_failed' in str(error)
+            if not flaky or attempt == retries:
+                raise
 
 
 def run_tool(name, arguments):
@@ -260,6 +280,7 @@ class Chat:
     """
 
     def __init__(self, system=SYSTEM_PROMPT, debug=False):
+        """Start a conversation with a system prompt and register the four tools."""
         self.messages = [{'role': 'system', 'content': system}]
         self.tools = TOOLS
         self.functions = FUNCTIONS
